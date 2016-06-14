@@ -1,11 +1,12 @@
 # pybench
 
-A similar tool to apache bench but with builtin graph creation that differenciates errors and successful responses.
+A similar tool to apache bench but with builtin graph creation that differentiates errors and successful responses.
 
 ## Dependencies
- - python >= 2.6
- - twisted >= 13.1.0
- - matplotlib >= 1.3.1
+
+```
+pip install -r requirements.txt
+```
 
 ## Usage
 
