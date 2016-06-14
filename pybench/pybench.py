@@ -12,9 +12,22 @@ import os
 import time
 from twisted.internet import (defer,
                               reactor)
+from twisted.internet.ssl import ClientContextFactory
 from twisted.web.client import Agent
 from twisted.web.http_headers import Headers
 from urlparse import urlparse
+
+
+class WebClientContextFactory(ClientContextFactory):
+    """
+    SSL context factory for generating context per request
+    """
+    def getContext(self, hostname, port):
+        """
+        This is overridden to disable certificate checking so that this
+        tool can be used in any environment
+        """
+        return ClientContextFactory.getContext(self)
 
 
 def parseURL(url):
@@ -75,10 +88,14 @@ class Bench(object):
         self.Requests = requests
         self.Concurrency = concurrency
         self.Timelimit = timelimit
-        self.Headers = Headers({'Authorization':[auth]})
+        if auth:
+            self.Headers = Headers({'Authorization': [auth]})
+        else:
+            self.Headers = None
         self.Url = url
 
-        self.Agents = [Agent(reactor) for x in range(concurrency)]
+        cFactory = WebClientContextFactory()
+        self.Agents = [Agent(reactor, cFactory) for x in range(concurrency)]
         self.Results = []
 
         self.ActiveQueries = {}
@@ -102,7 +119,7 @@ class Bench(object):
             result.start()
 
             # make the request
-            dfr = agent.request('GET', self.Url, self.Headers, None)
+            dfr = agent.request('GET', self.Url, self.Headers)
             self.ActiveQueries[agent] = dfr
             dfr.addCallback(self._callback, result, agent)
             dfr.addErrback(self._errback, result, agent)
